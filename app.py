@@ -373,8 +373,10 @@ elif report_type == "Combined GST Reconciliation":
         # Define correct column names for Tally Purchase Register
         tally_df.columns = [
             "Date", "Particulars", "Voucher_Type", "Voucher_No", "Supplier_Invoice_No",
-            "Supplier_Invoice_Date", "GSTIN", "Gross_Total", "Purchase_Accounts",
-            "Fixed_Assets", "Direct_Expenses", "Indirect_Expenses", "IGST", "CGST", "SGST"
+            "Supplier_Invoice_Date", "GSTIN", "Gross_Total", "IMPORT OF SERVICES",
+         "PURCHASE @ 5%", "PURCHASE @ 12%", "PURCHASE @ 18%", "TRANSPORT - PURCHASE @ 5%",
+         "TRANSPORT - PURCHASE @ 12%", "TRANSPORT - NON GST INWARD SUPPLY",
+         "Fixed_Assets", "Indirect_Expenses", "IGST", "CGST", "SGST","OCEAN FREIGHT"
         ]
 
         # Define correct column names for GSTR-2B

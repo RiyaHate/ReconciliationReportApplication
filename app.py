@@ -41,7 +41,7 @@ if report_type == "GST Reconciliation":
             "Supplier_Invoice_Date", "GSTIN", "Gross_Total", "IMPORT OF SERVICES",
          "PURCHASE @ 5%", "PURCHASE @ 12%", "PURCHASE @ 18%", "TRANSPORT - PURCHASE @ 5%",
          "TRANSPORT - PURCHASE @ 12%", "TRANSPORT - NON GST INWARD SUPPLY",
-         "Fixed_Assets", "Indirect_Expenses", "IGST", "CGST", "SGST"
+         "Fixed_Assets", "Indirect_Expenses", "IGST", "CGST", "SGST","OCEAN FREIGHT"
         ]
 
         # Define correct column names for GSTR-2B

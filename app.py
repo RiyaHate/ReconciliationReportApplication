@@ -54,7 +54,7 @@ if report_type == "GST Reconciliation":
 
         # Define correct column names for GSTR-CDNR
         gstr_cdnr_df.columns = [
-            "GSTIN", "Trade_Legal_Name", "Invoice_No", "Note_Type", "Note_Supply_Type",
+            "GSTIN", "Trade_Name", "Invoice_No", "Note_Type", "Note_Supply_Type",
             "Note_Date", "Invoice_Value", "Place_of_Supply", "Supply_Attract_Reverse_Charge", "Taxable_Value",
             "Integrated_Tax", "Central_Tax", "State_UT_Tax", "Cess", "GSTR_1_IFF_GSTR_5_Period",
             "GSTR_1_IFF_GSTR_5_Filing_Date", "ITC_Availability", "Reason", "Applicable_Tax_Rate",
@@ -161,13 +161,13 @@ if report_type == "GST Reconciliation":
 
         # Select only required columns
         output_df_b2b = reconciliation_df_b2b[[
-            "GSTIN", "Supplier_Invoice_No", "Gross_Total",
+            "GSTIN", "Supplier_Invoice_No","Particulars", "Trade_Name","Gross_Total",
              "Total_Expense", "IGST", "CGST",  "SGST", "Invoice_No",
              "Invoice_Value","Taxable_Value","Integrated_Tax","Central_Tax","State_UT_Tax", "Status"
         ]]
 
         output_df_cdnr = reconciliation_df_cdnr[[
-            "GSTIN", "Supplier_Invoice_No", "Gross_Total",
+            "GSTIN", "Supplier_Invoice_No", "Particulars","Trade_Name","Gross_Total",
              "Total_Expense", "IGST", "CGST",  "SGST", "Invoice_No",
              "Invoice_Value","Taxable_Value","Integrated_Tax","Central_Tax","State_UT_Tax", "Status"
         ]]
@@ -235,7 +235,7 @@ elif report_type == "Debit Note Reconciliation":
 
         # Define correct column names for GSTR-CDNR
         gstr_cdnr_df.columns = [
-            "GSTIN_of_Supplier", "Trade_Legal_Name", "Invoice_Number", "Note_Type", "Note_Supply_Type",
+            "GSTIN_of_Supplier", "Trade_Name", "Invoice_Number", "Note_Type", "Note_Supply_Type",
             "Note_Date", "Invoice_Value", "Place_of_Supply", "Supply_Attract_Reverse_Charge", "Taxable_Value",
             "Integrated_Tax", "Central_Tax", "State_UT_Tax", "Cess", "GSTR_1_IFF_GSTR_5_Period",
             "GSTR_1_IFF_GSTR_5_Filing_Date", "ITC_Availability", "Reason", "Applicable_Tax_Rate",

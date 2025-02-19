@@ -3,9 +3,7 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill,Font
 from openpyxl.utils import get_column_letter
-
 import os
-
 # Set page title and favicon
 st.set_page_config(page_title="Reconciliation Tool")
 
@@ -171,28 +169,6 @@ if report_type == "GST Reconciliation":
         # Combine both DataFrames into one for GSTR-2B + CDNR (Debit Note)
         combined_df = pd.concat([output_df_b2b, output_df_cdnr], ignore_index=True)
 
-        # Save to Excel with formatting
-        # output_file = "GST_Reconciliation_Report_Combined.xlsx"
-        # with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
-        #     combined_df.to_excel(writer, sheet_name="GSTR-2B", index=False)
-
-        #     # Access the workbook and the sheet
-        #     workbook = writer.book
-        #     sheet_b2b = workbook["GSTR-2B"]
-
-        #     # Function to apply red highlight to mismatch rows and yellow for Debit Notes
-        #     def highlight_rows(sheet, df):
-        #         for i, row in df.iterrows():
-        #             if row["Status"] == "Mismatch":
-        #                 for col in sheet.iter_cols(min_row=i+2, max_row=i+2, min_col=1, max_col=len(df.columns)):
-        #                     col[0].fill = mismatch_fill
-        #             # Highlight Debit Note rows in yellow
-        #             if i >= len(output_df_b2b):  # These rows come from B2B-CDNR (Debit Note)
-        #                 for col in sheet.iter_cols(min_row=i+2, max_row=i+2, min_col=1, max_col=len(df.columns)):
-        #                     col[0].fill = debit_note_fill
-
-        #     # Highlight mismatches and debit note rows
-        #     highlight_rows(sheet_b2b, combined_df)
         output_file = "GST_Reconciliation_Report_Combined.xlsx"
         with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
             combined_df.to_excel(writer, sheet_name="GSTR-2B", index=False)
@@ -328,7 +304,7 @@ elif report_type == "Debit Note Reconciliation":
 
         # Select only required columns
         output_df = reconciliation_df[[ 
-            "GSTIN", "Supplier_Invoice_No",  "Gross_Total",
+            "GSTIN", "Supplier_Invoice_No", "Trade_Name", "Particulars" ,"Gross_Total",
              "Total_Expense", "IGST",
             "CGST",  "SGST", "Invoice_Number", "Invoice_Value","Taxable_Value", 
             "Integrated_Tax","Central_Tax","State_UT_Tax", "Status"
@@ -338,31 +314,6 @@ elif report_type == "Debit Note Reconciliation":
         output_file = "DebitNoteReconciliation_Report.xlsx"
         output_df.to_excel(output_file, index=False)
 
-        # Load workbook for highlighting mismatches
-        # wb = load_workbook(output_file)
-        # ws = wb.active
-
-        # # Columns to check for mismatch highlighting
-        # columns_to_check = {
-        #     "Invoice_Value": "Gross_Total",
-        #     "Taxable_Value": "Total_Expense",
-        #     "Integrated_Tax": "IGST",
-        #     "Central_Tax": "CGST",
-        #     "State_UT_Tax": "SGST"
-        # }
-        # status_col_idx = output_df.columns.get_loc("Status") + 1
-
-        # # Apply highlighting for mismatches
-        # for row in range(2, ws.max_row + 1):  # Skip header
-        #     if ws.cell(row, status_col_idx).value == "Mismatch":
-        #         for col_gstr, col_tally in columns_to_check.items():
-        #             gstr_col_idx = output_df.columns.get_loc(col_gstr) + 1
-        #             tally_col_idx = output_df.columns.get_loc(col_tally) + 1
-        #             ws.cell(row, gstr_col_idx).fill = red_fill
-        #             ws.cell(row, tally_col_idx).fill = red_fill
-
-        # # Save final file
-        # wb.save(output_file)
         wb = load_workbook(output_file)
         ws = wb.active
 
@@ -710,20 +661,6 @@ elif report_type == "Combined GST Reconciliation":
         output_file = "GST_Reconciliation_Summary.xlsx"
         combined_df.to_excel(output_file, index=False)
 
-        # Load workbook for highlighting
-        # wb = load_workbook(output_file)
-        # ws = wb.active
-
-        # # Apply highlighting for debit notes
-        # status_col_idx = combined_df.columns.get_loc("Remarks") + 1
-        # for row in range(2, ws.max_row + 1):  # Skip header
-        #     if ws.cell(row, status_col_idx).value == "Debit Note":
-        #         for col in numeric_cols:
-        #             col_idx = combined_df.columns.get_loc(col) + 1
-        #             ws.cell(row, col_idx).fill = yellow_fill
-
-        # # Save final file
-        # wb.save(output_file)
         wb = load_workbook(output_file)
         ws = wb.active
 

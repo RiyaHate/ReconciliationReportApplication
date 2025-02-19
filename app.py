@@ -200,10 +200,6 @@ if report_type == "GST Reconciliation":
             # Access the workbook and the sheet
             workbook = writer.book
             sheet_b2b = workbook["GSTR-2B"]
-
-            from openpyxl.styles import Font, PatternFill
-            from openpyxl.utils import get_column_letter
-
             # Formatting: Set column width and highlight headers
             header_fill = PatternFill(start_color="FFC000", end_color="FFC000", fill_type="solid")  # Yellow Header
             bold_font = Font(bold=True)

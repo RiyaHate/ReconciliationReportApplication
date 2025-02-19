@@ -1,7 +1,9 @@
 import streamlit as st
 import pandas as pd
 from openpyxl import load_workbook
-from openpyxl.styles import PatternFill
+from openpyxl.styles import PatternFill,Font
+from openpyxl.utils import get_column_letter
+
 import os
 
 # Set page title and favicon
@@ -38,10 +40,8 @@ if report_type == "GST Reconciliation":
         # Define correct column names for Tally Purchase Register
         tally_df.columns = [
             "Date", "Particulars", "Voucher_Type", "Voucher_No", "Supplier_Invoice_No",
-            "Supplier_Invoice_Date", "GSTIN", "Gross_Total", "IMPORT OF SERVICES",
-         "PURCHASE @ 5%", "PURCHASE @ 12%", "PURCHASE @ 18%", "TRANSPORT - PURCHASE @ 5%",
-         "TRANSPORT - PURCHASE @ 12%", "TRANSPORT - NON GST INWARD SUPPLY",
-         "Fixed_Assets", "Indirect_Expenses", "IGST", "CGST", "SGST","OCEAN FREIGHT"
+            "Supplier_Invoice_Date", "GSTIN", "Gross_Total", "Purchase_Accounts",
+            "Fixed_Assets","Direct_Expenses","Indirect_Expenses","IGST", "CGST", "SGST"
         ]
 
         # Define correct column names for GSTR-2B
@@ -73,10 +73,8 @@ if report_type == "GST Reconciliation":
         debit_note_df.dropna(subset=["GSTIN", "Invoice_No"], how="all", inplace=True)
 
         # Convert relevant numeric columns to float
-        tally_numeric_cols = ["Gross_Total",  "IMPORT OF SERVICES",
-        "PURCHASE @ 5%", "PURCHASE @ 12%", "PURCHASE @ 18%", "TRANSPORT - PURCHASE @ 5%",
-        "TRANSPORT - PURCHASE @ 12%", "TRANSPORT - NON GST INWARD SUPPLY",
-        "Fixed_Assets", "Indirect_Expenses", "IGST", "CGST", "SGST"]
+        tally_numeric_cols = ["Gross_Total",  "Purchase_Accounts",
+            "Fixed_Assets","Direct_Expenses","Indirect_Expenses", "IGST", "CGST", "SGST"]
         gstr_numeric_cols = ["Invoice_Value", "Taxable_Value", "Integrated_Tax", "Central_Tax", "State_UT_Tax"]
 
         for col in tally_numeric_cols:
@@ -88,10 +86,8 @@ if report_type == "GST Reconciliation":
                 debit_note_df[col] = pd.to_numeric(debit_note_df[col], errors="coerce").fillna(0)
 
         # Compute total expense in Tally
-        tally_df["Total_Expense"] = tally_df[["IMPORT OF SERVICES",
-       "PURCHASE @ 5%", "PURCHASE @ 12%", "PURCHASE @ 18%", "TRANSPORT - PURCHASE @ 5%",
-       "TRANSPORT - PURCHASE @ 12%", "TRANSPORT - NON GST INWARD SUPPLY",
-       "Fixed_Assets", "Indirect_Expenses"]].sum(axis=1)
+        tally_df["Total_Expense"] = tally_df[["Purchase_Accounts",
+            "Fixed_Assets","Direct_Expenses","Indirect_Expenses"]].sum(axis=1)
 
         # Merge Tally with GSTR-2B
         reconciliation_df_b2b = pd.merge(
@@ -176,6 +172,27 @@ if report_type == "GST Reconciliation":
         combined_df = pd.concat([output_df_b2b, output_df_cdnr], ignore_index=True)
 
         # Save to Excel with formatting
+        # output_file = "GST_Reconciliation_Report_Combined.xlsx"
+        # with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
+        #     combined_df.to_excel(writer, sheet_name="GSTR-2B", index=False)
+
+        #     # Access the workbook and the sheet
+        #     workbook = writer.book
+        #     sheet_b2b = workbook["GSTR-2B"]
+
+        #     # Function to apply red highlight to mismatch rows and yellow for Debit Notes
+        #     def highlight_rows(sheet, df):
+        #         for i, row in df.iterrows():
+        #             if row["Status"] == "Mismatch":
+        #                 for col in sheet.iter_cols(min_row=i+2, max_row=i+2, min_col=1, max_col=len(df.columns)):
+        #                     col[0].fill = mismatch_fill
+        #             # Highlight Debit Note rows in yellow
+        #             if i >= len(output_df_b2b):  # These rows come from B2B-CDNR (Debit Note)
+        #                 for col in sheet.iter_cols(min_row=i+2, max_row=i+2, min_col=1, max_col=len(df.columns)):
+        #                     col[0].fill = debit_note_fill
+
+        #     # Highlight mismatches and debit note rows
+        #     highlight_rows(sheet_b2b, combined_df)
         output_file = "GST_Reconciliation_Report_Combined.xlsx"
         with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
             combined_df.to_excel(writer, sheet_name="GSTR-2B", index=False)
@@ -184,8 +201,25 @@ if report_type == "GST Reconciliation":
             workbook = writer.book
             sheet_b2b = workbook["GSTR-2B"]
 
+            from openpyxl.styles import Font, PatternFill
+            from openpyxl.utils import get_column_letter
+
+            # Formatting: Set column width and highlight headers
+            header_fill = PatternFill(start_color="FFC000", end_color="FFC000", fill_type="solid")  # Yellow Header
+            bold_font = Font(bold=True)
+
+            for col_num, col_name in enumerate(combined_df.columns, 1):
+                col_letter = get_column_letter(col_num)
+                sheet_b2b.column_dimensions[col_letter].width = 20  # Set column width
+                cell = sheet_b2b[f"{col_letter}1"]
+                cell.fill = header_fill  # Highlight header
+                cell.font = bold_font  # Bold header text
+
             # Function to apply red highlight to mismatch rows and yellow for Debit Notes
             def highlight_rows(sheet, df):
+                mismatch_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")  # Red for Mismatches
+                debit_note_fill = PatternFill(start_color="FFFF99", end_color="FFFF99", fill_type="solid")  # Yellow for Debit Notes
+
                 for i, row in df.iterrows():
                     if row["Status"] == "Mismatch":
                         for col in sheet.iter_cols(min_row=i+2, max_row=i+2, min_col=1, max_col=len(df.columns)):
@@ -197,7 +231,6 @@ if report_type == "GST Reconciliation":
 
             # Highlight mismatches and debit note rows
             highlight_rows(sheet_b2b, combined_df)
-
         return output_file
 
     if st.button("Generate GST Report"):
@@ -230,7 +263,7 @@ elif report_type == "Debit Note Reconciliation":
         debit_df.columns = [
             "Date", "Particulars", "Supplier_Invoice_No", "Credit Note Date", "Voucher Type", "Voucher_No",
             "Voucher Ref. No.", "Voucher Ref. Date", "GSTIN", "Gross_Total", "Purchase_Accounts",
-            "Fixed_Assets", "IGST", "CGST", "SGST", "Round Off"
+            "Fixed_Assets","Direct_Expenses","Indirect_Expenses", "IGST", "CGST", "SGST"
         ]
 
         # Define correct column names for GSTR-CDNR
@@ -310,8 +343,47 @@ elif report_type == "Debit Note Reconciliation":
         output_df.to_excel(output_file, index=False)
 
         # Load workbook for highlighting mismatches
+        # wb = load_workbook(output_file)
+        # ws = wb.active
+
+        # # Columns to check for mismatch highlighting
+        # columns_to_check = {
+        #     "Invoice_Value": "Gross_Total",
+        #     "Taxable_Value": "Total_Expense",
+        #     "Integrated_Tax": "IGST",
+        #     "Central_Tax": "CGST",
+        #     "State_UT_Tax": "SGST"
+        # }
+        # status_col_idx = output_df.columns.get_loc("Status") + 1
+
+        # # Apply highlighting for mismatches
+        # for row in range(2, ws.max_row + 1):  # Skip header
+        #     if ws.cell(row, status_col_idx).value == "Mismatch":
+        #         for col_gstr, col_tally in columns_to_check.items():
+        #             gstr_col_idx = output_df.columns.get_loc(col_gstr) + 1
+        #             tally_col_idx = output_df.columns.get_loc(col_tally) + 1
+        #             ws.cell(row, gstr_col_idx).fill = red_fill
+        #             ws.cell(row, tally_col_idx).fill = red_fill
+
+        # # Save final file
+        # wb.save(output_file)
         wb = load_workbook(output_file)
         ws = wb.active
+
+        # Define column formatting
+        header_fill = PatternFill(start_color="FFC000", end_color="FFC000", fill_type="solid")  # Yellow Header
+        bold_font = Font(bold=True)
+
+        # Format headers (Bold + Background Color)
+        for col_num, col_name in enumerate(output_df.columns, 1):
+            col_letter = get_column_letter(col_num)
+            ws.column_dimensions[col_letter].width = 20  # Set column width
+            header_cell = ws[f"{col_letter}1"]
+            header_cell.fill = header_fill  # Highlight header
+            header_cell.font = bold_font  # Bold header text
+
+        # Define Mismatch Highlighting
+        red_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")  # Red for mismatches
 
         # Columns to check for mismatch highlighting
         columns_to_check = {
@@ -321,20 +393,29 @@ elif report_type == "Debit Note Reconciliation":
             "Central_Tax": "CGST",
             "State_UT_Tax": "SGST"
         }
-        status_col_idx = output_df.columns.get_loc("Status") + 1
+
+        # Get index of the "Status" column safely
+        try:
+            status_col_idx = output_df.columns.get_loc("Status") + 1
+        except KeyError:
+            print("Error: 'Status' column not found!")
+            status_col_idx = None
 
         # Apply highlighting for mismatches
-        for row in range(2, ws.max_row + 1):  # Skip header
-            if ws.cell(row, status_col_idx).value == "Mismatch":
-                for col_gstr, col_tally in columns_to_check.items():
-                    gstr_col_idx = output_df.columns.get_loc(col_gstr) + 1
-                    tally_col_idx = output_df.columns.get_loc(col_tally) + 1
-                    ws.cell(row, gstr_col_idx).fill = red_fill
-                    ws.cell(row, tally_col_idx).fill = red_fill
+        if status_col_idx:
+            for row in range(2, ws.max_row + 1):  # Skip header
+                if ws.cell(row, status_col_idx).value == "Mismatch":
+                    for col_gstr, col_tally in columns_to_check.items():
+                        try:
+                            gstr_col_idx = output_df.columns.get_loc(col_gstr) + 1
+                            tally_col_idx = output_df.columns.get_loc(col_tally) + 1
+                            ws.cell(row, gstr_col_idx).fill = red_fill
+                            ws.cell(row, tally_col_idx).fill = red_fill
+                        except KeyError:
+                            print(f"Warning: Columns '{col_gstr}' or '{col_tally}' not found in the DataFrame.")
 
-        # Save final file
+        # Save final formatted file
         wb.save(output_file)
-
         return output_file
 
     if st.button("Generate Debit Note Report"):
@@ -373,10 +454,8 @@ elif report_type == "Combined GST Reconciliation":
         # Define correct column names for Tally Purchase Register
         tally_df.columns = [
             "Date", "Particulars", "Voucher_Type", "Voucher_No", "Supplier_Invoice_No",
-            "Supplier_Invoice_Date", "GSTIN", "Gross_Total", "IMPORT OF SERVICES",
-         "PURCHASE @ 5%", "PURCHASE @ 12%", "PURCHASE @ 18%", "TRANSPORT - PURCHASE @ 5%",
-         "TRANSPORT - PURCHASE @ 12%", "TRANSPORT - NON GST INWARD SUPPLY",
-         "Fixed_Assets", "Indirect_Expenses", "IGST", "CGST", "SGST","OCEAN FREIGHT"
+            "Supplier_Invoice_Date", "GSTIN", "Gross_Total", "Purchase_Accounts",
+            "Fixed_Assets","Direct_Expenses","Indirect_Expenses", "IGST", "CGST", "SGST"
         ]
 
         # Define correct column names for GSTR-2B
@@ -391,7 +470,7 @@ elif report_type == "Combined GST Reconciliation":
         debit_df.columns = [
             "Date", "Particulars", "Supplier_Invoice_No", "Credit Note Date", "Voucher Type", "Voucher_No",
             "Voucher Ref. No.", "Voucher Ref. Date", "GSTIN", "Gross_Total", "Purchase_Accounts",
-            "Fixed_Assets", "IGST", "CGST", "SGST", "Round Off"
+            "Fixed_Assets","Direct_Expenses","Indirect_Expenses", "IGST", "CGST", "SGST"
         ]
 
         # Define correct column names for GSTR-CDNR
@@ -636,20 +715,55 @@ elif report_type == "Combined GST Reconciliation":
         combined_df.to_excel(output_file, index=False)
 
         # Load workbook for highlighting
+        # wb = load_workbook(output_file)
+        # ws = wb.active
+
+        # # Apply highlighting for debit notes
+        # status_col_idx = combined_df.columns.get_loc("Remarks") + 1
+        # for row in range(2, ws.max_row + 1):  # Skip header
+        #     if ws.cell(row, status_col_idx).value == "Debit Note":
+        #         for col in numeric_cols:
+        #             col_idx = combined_df.columns.get_loc(col) + 1
+        #             ws.cell(row, col_idx).fill = yellow_fill
+
+        # # Save final file
+        # wb.save(output_file)
         wb = load_workbook(output_file)
         ws = wb.active
 
+        # Define column formatting
+        header_fill = PatternFill(start_color="FFC000", end_color="FFC000", fill_type="solid")  # Yellow Header
+        bold_font = Font(bold=True)
+        yellow_fill = PatternFill(start_color="FFFF99", end_color="FFFF99", fill_type="solid")  # Light Yellow for Debit Notes
+
+        # Format headers (Bold + Background Color)
+        for col_num, col_name in enumerate(combined_df.columns, 1):
+            col_letter = get_column_letter(col_num)
+            ws.column_dimensions[col_letter].width = 20  # Set column width
+            header_cell = ws[f"{col_letter}1"]
+            header_cell.fill = header_fill  # Highlight header
+            header_cell.font = bold_font  # Bold header text
+
+        # Get index of the "Remarks" column safely
+        try:
+            status_col_idx = combined_df.columns.get_loc("Remarks") + 1
+        except KeyError:
+            print("Error: 'Remarks' column not found!")
+            status_col_idx = None
+
         # Apply highlighting for debit notes
-        status_col_idx = combined_df.columns.get_loc("Remarks") + 1
-        for row in range(2, ws.max_row + 1):  # Skip header
-            if ws.cell(row, status_col_idx).value == "Debit Note":
-                for col in numeric_cols:
-                    col_idx = combined_df.columns.get_loc(col) + 1
-                    ws.cell(row, col_idx).fill = yellow_fill
+        if status_col_idx:
+            for row in range(2, ws.max_row + 1):  # Skip header
+                if ws.cell(row, status_col_idx).value == "Debit Note":
+                    for col in numeric_cols:
+                        try:
+                            col_idx = combined_df.columns.get_loc(col) + 1
+                            ws.cell(row, col_idx).fill = yellow_fill  # Apply yellow highlight
+                        except KeyError:
+                            print(f"Warning: Column '{col}' not found in the DataFrame.")
 
-        # Save final file
+        # Save final formatted file
         wb.save(output_file)
-
         return output_file
 
     if st.button("Generate Combined Report"):

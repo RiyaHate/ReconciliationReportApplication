@@ -106,11 +106,11 @@ if report_type == "GST Reconciliation":
             suffixes=("_Tally", "_GSTR"),
             indicator=True
         )
+        
 
         # Ensure B2B-CDNR (Debit Note) records are retained
         if "Note_Type" in reconciliation_df_cdnr.columns:
             reconciliation_df_cdnr = reconciliation_df_cdnr[reconciliation_df_cdnr["Note_Type"].str.contains("Debit Note", case=False, na=False)]
-
         # Define ₹2 tolerance threshold
         tolerance = 2.00
 
@@ -152,6 +152,10 @@ if report_type == "GST Reconciliation":
         # Drop merge indicator column
         reconciliation_df_b2b.drop(columns=["_merge"], inplace=True)
         reconciliation_df_cdnr.drop(columns=["_merge"], inplace=True)
+        reconciliation_df_b2b= reconciliation_df_b2b[~(
+    (reconciliation_df_b2b["Supplier_Invoice_No"].isin(reconciliation_df_cdnr["Supplier_Invoice_No"])) &
+    (reconciliation_df_b2b["Status"] == "Missing in GSTR")
+)]
 
         # Select only required columns
         output_df_b2b = reconciliation_df_b2b[[
@@ -168,7 +172,7 @@ if report_type == "GST Reconciliation":
 
         # Combine both DataFrames into one for GSTR-2B + CDNR (Debit Note)
         combined_df = pd.concat([output_df_b2b, output_df_cdnr], ignore_index=True)
-
+        
         output_file = "GST_Reconciliation_Report_Combined.xlsx"
         with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
             combined_df.to_excel(writer, sheet_name="GSTR-2B", index=False)
@@ -248,7 +252,7 @@ elif report_type == "Debit Note Reconciliation":
         ]
 
         # Filter records where Note_Type contains 'Credit Note' (case insensitive)
-        credit_note_df = gstr_cdnr_df[gstr_cdnr_df["Note_Type"].str.contains("Credit Note", case=False, na=False)]
+        gstr_cdnr_df = gstr_cdnr_df[gstr_cdnr_df["Note_Type"].str.contains("Credit Note", case=False, na=False)]
 
         # Convert only relevant numeric columns to float in debit_df
         debit_numeric_cols = ["Gross_Total", "Purchase_Accounts", "Fixed_Assets", "IGST", "CGST", "SGST"]

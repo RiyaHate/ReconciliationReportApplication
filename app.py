@@ -432,6 +432,7 @@ elif report_type == "Combined GST Reconciliation":
             "GSTR_1_IFF_GSTR_5_Filing_Date", "ITC_Availability", "Reason", "Applicable_Tax_Rate",
             "Source", "IRN", "IRN_Date"
         ]
+        gstr_cdnr_df=gstr_cdnr_df[gstr_cdnr_df["Note_Type"] == "Credit Note"]
 
         # Convert numeric columns to float
         numeric_cols_tally = ["Gross_Total", "Purchase_Accounts", "Fixed_Assets", "Direct_Expenses", 

@@ -426,7 +426,7 @@ elif report_type == "Combined GST Reconciliation":
 
         # Define correct column names for GSTR-CDNR
         gstr_cdnr_df.columns = [
-            "GSTIN_of_Supplier", "Trade_Legal_Name", "Invoice_Number", "Note_Type", "Note_Supply_Type",
+            "GSTIN", "Trade_Name", "Invoice_Number", "Note_Type", "Note_Supply_Type",
             "Note_Date", "Invoice_Value", "Place_of_Supply", "Supply_Attract_Reverse_Charge", "Taxable_Value",
             "Integrated_Tax", "Central_Tax", "State_UT_Tax", "Cess", "GSTR_1_IFF_GSTR_5_Period",
             "GSTR_1_IFF_GSTR_5_Filing_Date", "ITC_Availability", "Reason", "Applicable_Tax_Rate",
@@ -445,6 +445,8 @@ elif report_type == "Combined GST Reconciliation":
 
         for col in numeric_cols_gstr:
             gstr_df[col] = pd.to_numeric(gstr_df[col], errors='coerce').fillna(0)
+        for col in numeric_cols_gstr:
+            gstr_cdnr_df[col] = pd.to_numeric(gstr_cdnr_df[col], errors='coerce').fillna(0)
 
         for col in numeric_cols_debit:
             debit_df[col] = pd.to_numeric(debit_df[col], errors='coerce').fillna(0)
@@ -477,8 +479,8 @@ elif report_type == "Combined GST Reconciliation":
         }).reset_index()
 
         # Aggregate GSTR-CDNR data by GSTIN while concatenating multiple Trade Names
-        gstr_cdnr_agg = gstr_cdnr_df.groupby("GSTIN_of_Supplier").agg({
-            "Trade_Legal_Name": lambda x: ', '.join(set(x)),  # Combine different Trade Names
+        gstr_cdnr_agg = gstr_cdnr_df.groupby("GSTIN").agg({
+            "Trade_Name": lambda x: ', '.join(set(x)),  # Combine different Trade Names
             "Invoice_Value": "sum",
             "Integrated_Tax": "sum",
             "Central_Tax": "sum",
@@ -487,7 +489,7 @@ elif report_type == "Combined GST Reconciliation":
 
         # Perform reconciliation based on GSTIN
         reconciliation_df = pd.merge(
-            tally_agg, gstr_agg,
+            tally_agg, gstr_cdnr_agg,
             left_on=["GSTIN"],
             right_on=["GSTIN"],
             how="outer",
@@ -553,7 +555,7 @@ elif report_type == "Combined GST Reconciliation":
             debit_agg,
             gstr_cdnr_agg,
             left_on="GSTIN",
-            right_on="GSTIN_of_Supplier",
+            right_on="GSTIN",
             how="outer",
             suffixes=("_DEBIT", "_GSTR"),
             indicator=True,
@@ -617,7 +619,7 @@ elif report_type == "Combined GST Reconciliation":
                 "IGST",
                 "CGST",
                 "SGST",
-                "Trade_Legal_Name",
+                "Trade_Name",
                 "Integrated_Tax",
                 "Central_Tax",
                 "State_UT_Tax",

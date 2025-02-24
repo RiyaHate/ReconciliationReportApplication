@@ -489,7 +489,7 @@ elif report_type == "Combined GST Reconciliation":
 
         # Perform reconciliation based on GSTIN
         reconciliation_df = pd.merge(
-            tally_agg, gstr_cdnr_agg,
+            tally_agg, gstr_agg,
             left_on=["GSTIN"],
             right_on=["GSTIN"],
             how="outer",

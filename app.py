@@ -4,6 +4,7 @@ from openpyxl import load_workbook
 from openpyxl.styles import PatternFill,Font
 from openpyxl.utils import get_column_letter
 import os
+import numpy as np
 # Set page title and favicon
 st.set_page_config(page_title="Reconciliation Tool")
 
@@ -426,12 +427,30 @@ elif report_type == "Combined GST Reconciliation":
 
         # Define correct column names for GSTR-CDNR
         gstr_cdnr_df.columns = [
-            "GSTIN", "Trade_Name", "Invoice_Number", "Note_Type", "Note_Supply_Type",
+            "GSTIN", "Trade_Name", "Invoice_No", "Note_Type", "Note_Supply_Type",
             "Note_Date", "Invoice_Value", "Place_of_Supply", "Supply_Attract_Reverse_Charge", "Taxable_Value",
             "Integrated_Tax", "Central_Tax", "State_UT_Tax", "Cess", "GSTR_1_IFF_GSTR_5_Period",
             "GSTR_1_IFF_GSTR_5_Filing_Date", "ITC_Availability", "Reason", "Applicable_Tax_Rate",
             "Source", "IRN", "IRN_Date"
         ]
+       
+        filtered_gstr_cdnr_df = gstr_cdnr_df[gstr_cdnr_df["Note_Type"] == "Debit Note"].copy()
+
+        # Drop "Note_Type" and "Note_Supply_Type" columns from gstr_cdnr_df as they are not present in gstr_df
+        filtered_gstr_cdnr_df.drop(["Note_Type", "Note_Supply_Type"], axis=1, inplace=True)
+
+        # Rename columns in filtered_gstr_cdnr_df to match gstr_df
+        column_mapping = {
+            "Note_Date": "Invoice_Date",
+            "Supply_Attract_Reverse_Charge": "Reverse_Charge",
+            "GSTR_1_IFF_GSTR_5_Period": "GSTR_IFF_Period",
+            "GSTR_1_IFF_GSTR_5_Filing_Date": "GSTR_IFF_Filing_Date"
+        }
+
+        filtered_gstr_cdnr_df.rename(columns=column_mapping, inplace=True)
+
+
+        gstr_df=pd.concat([gstr_df, filtered_gstr_cdnr_df], ignore_index=True)
         gstr_cdnr_df=gstr_cdnr_df[gstr_cdnr_df["Note_Type"] == "Credit Note"]
 
         # Convert numeric columns to float
@@ -450,6 +469,9 @@ elif report_type == "Combined GST Reconciliation":
 
         for col in numeric_cols_debit:
             debit_df[col] = pd.to_numeric(debit_df[col], errors='coerce').fillna(0)
+
+        #merging b2b and cdnr debit note values
+          
 
         # Aggregate Data by GSTIN & Trade Name
         tally_agg = tally_df.groupby("GSTIN").agg({
@@ -510,6 +532,9 @@ elif report_type == "Combined GST Reconciliation":
         reconciliation_df["Diff_IGST"] = reconciliation_df["IGST"] - reconciliation_df["Integrated_Tax"]
         reconciliation_df["Diff_CGST"] = reconciliation_df["CGST"] - reconciliation_df["Central_Tax"]
         reconciliation_df["Diff_SGST"] = reconciliation_df["SGST"] - reconciliation_df["State_UT_Tax"]
+        reconciliation_df["Diff_IGST"] = reconciliation_df["Diff_IGST"].apply(lambda x: 0 if np.isclose(x, 0, atol=1e-6) else x)
+        reconciliation_df["Diff_CGST"] = reconciliation_df["Diff_CGST"].apply(lambda x: 0 if np.isclose(x, 0, atol=1e-6) else x)
+        reconciliation_df["Diff_SGST"] = reconciliation_df["Diff_SGST"].apply(lambda x: 0 if np.isclose(x, 0, atol=1e-6) else x)
 
         # Determine Status
         def get_status(row):

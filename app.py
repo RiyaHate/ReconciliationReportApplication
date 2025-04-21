@@ -174,7 +174,7 @@ if report_type == "GST Reconciliation":
         # Combine both DataFrames into one for GSTR-2B + CDNR (Debit Note)
         combined_df = pd.concat([output_df_b2b, output_df_cdnr], ignore_index=True)
         
-        output_file = "GST_Reconciliation_Report_Combined.xlsx"
+        output_file = "PurchaseRegister_Reconciliation.xlsx"
         with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
             combined_df.to_excel(writer, sheet_name="GSTR-2B", index=False)
 
@@ -309,14 +309,14 @@ elif report_type == "Debit Note Reconciliation":
 
         # Select only required columns
         output_df = reconciliation_df[[ 
-            "GSTIN", "Supplier_Invoice_No", "Trade_Name", "Particulars" ,"Gross_Total",
+            "GSTIN","GSTIN_of_Supplier" "Supplier_Invoice_No", "Trade_Name", "Particulars" ,"Gross_Total",
              "Total_Expense", "IGST",
             "CGST",  "SGST", "Invoice_Number", "Invoice_Value","Taxable_Value", 
             "Integrated_Tax","Central_Tax","State_UT_Tax", "Status"
         ]]
 
         # Save the report
-        output_file = "DebitNoteReconciliation_Report.xlsx"
+        output_file = "DebitNote_Reconciliation_Report.xlsx"
         output_df.to_excel(output_file, index=False)
 
         wb = load_workbook(output_file)
@@ -690,7 +690,7 @@ elif report_type == "Combined GST Reconciliation":
         combined_df = combined_df.sort_values(by=["Particulars"], ascending=[True])
 
         # Save to Excel
-        output_file = "GST_Reconciliation_Summary.xlsx"
+        output_file = "GST_Summary_Reconciliation.xlsx"
         combined_df.to_excel(output_file, index=False)
 
         wb = load_workbook(output_file)

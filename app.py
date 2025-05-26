@@ -278,6 +278,7 @@ elif report_type == "Debit Note Reconciliation":
             suffixes=('_DEBIT', '_GSTR'),
             indicator=True
         )
+        reconciliation_df['_GSTIN_'] = reconciliation_df['GSTIN'].fillna(reconciliation_df['GSTIN_of_Supplier'])
 
         # Fill NaN values with 0 for numeric columns
         comparison_cols = ["Gross_Total", "Invoice_Value", "Total_Expense", "Taxable_Value",
@@ -307,9 +308,10 @@ elif report_type == "Debit Note Reconciliation":
         # Drop the merge indicator column
         reconciliation_df.drop(columns=["_merge"], inplace=True)
 
+
         # Select only required columns
         output_df = reconciliation_df[[ 
-            "GSTIN","GSTIN_of_Supplier", "Supplier_Invoice_No", "Trade_Name", "Particulars" ,"Gross_Total",
+            "_GSTIN_", "Supplier_Invoice_No", "Trade_Name", "Particulars" ,"Gross_Total",
              "Total_Expense", "IGST",
             "CGST",  "SGST", "Invoice_Number", "Invoice_Value","Taxable_Value", 
             "Integrated_Tax","Central_Tax","State_UT_Tax", "Status"
